@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import LoadingSystem from "@/components/LoadingSystem";
 import NotificationCenter from "@/components/NotificationCenter";
 import SystemStatus from "@/components/SystemStatus";
 import DownloadManager from "@/components/DownloadManager";
@@ -43,13 +42,6 @@ const Index = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(
     adminAuth.isAuthenticated(),
   );
-  // Only show loading on first visit
-  const [showLoadingSystem, setShowLoadingSystem] = useState(
-    !sessionStorage.getItem("hydra-visited"),
-  );
-  const [systemInitialized, setSystemInitialized] = useState(
-    !!sessionStorage.getItem("hydra-visited"),
-  );
   const [showDownloadManager, setShowDownloadManager] = useState(false);
 
   const ddosProtection = useDDoSProtection();
@@ -63,12 +55,6 @@ const Index = () => {
     const interval = setInterval(checkAuth, 1000);
     return () => clearInterval(interval);
   }, []);
-
-  const handleLoadingComplete = () => {
-    setShowLoadingSystem(false);
-    setSystemInitialized(true);
-    sessionStorage.setItem("hydra-visited", "true");
-  };
 
   const handleLoginClick = () => {
     if (isAuthenticated) {
@@ -801,12 +787,6 @@ const Index = () => {
           </div>
         </div>
       )}
-
-      {/* Loading System */}
-      <LoadingSystem
-        visible={showLoadingSystem}
-        onComplete={handleLoadingComplete}
-      />
 
       {/* Download Manager */}
       <DownloadManager
