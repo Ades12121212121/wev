@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
@@ -9,7 +9,7 @@ interface LoadingStage {
   id: string;
   name: string;
   description: string;
-  duration: number;
+  duration: number; // ms
   icon: React.ReactNode;
 }
 
@@ -18,28 +18,28 @@ const loadingStages: LoadingStage[] = [
     id: "security",
     name: "SECURITY VALIDATION",
     description: "Verificando integridad del cliente...",
-    duration: 1,
+    duration: 900,
     icon: <Shield className="h-4 w-4" />,
   },
   {
     id: "ddos",
     name: "DDOS PROTECTION",
     description: "Activando sistemas de protección...",
-    duration: 1,
+    duration: 900,
     icon: <Zap className="h-4 w-4" />,
   },
   {
     id: "download",
     name: "DOWNLOAD PREPARATION",
     description: "Preparando enlaces de descarga...",
-    duration: 1,
+    duration: 900,
     icon: <Download className="h-4 w-4" />,
   },
   {
     id: "complete",
     name: "SYSTEM READY",
     description: "Hydra Tools está listo para usar",
-    duration: 1,
+    duration: 900,
     icon: <CheckCircle className="h-4 w-4" />,
   },
 ];
@@ -59,64 +59,85 @@ const LoadingSystem = ({
   const [progress, setProgress] = useState(0);
   const [stageProgress, setStageProgress] = useState(0);
   const [canSkip, setCanSkip] = useState(false);
+  const [skipSeconds, setSkipSeconds] = useState(1);
 
+  // Refs para temporizadores
+  const stageTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const progressTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const skipTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Lógica para el skip
+  useEffect(() => {
+    if (!visible || !allowSkip) return;
+    setSkipSeconds(1);
+    setCanSkip(false);
+    skipTimerRef.current && clearInterval(skipTimerRef.current);
+    skipTimerRef.current = setInterval(() => {
+      setSkipSeconds((s) => {
+        if (s <= 1) {
+          setCanSkip(true);
+          skipTimerRef.current && clearInterval(skipTimerRef.current);
+          return 0;
+        }
+        return s - 1;
+      });
+    }, 1000);
+    return () => {
+      skipTimerRef.current && clearInterval(skipTimerRef.current);
+    };
+  }, [visible, allowSkip]);
+
+  // Lógica de progreso y etapas
   useEffect(() => {
     if (!visible) return;
-
-    // Allow skip after 1 second
-    const skipTimer = setTimeout(() => {
-      setCanSkip(true);
-    }, 1000);
-
-    let stageTimer: NodeJS.Timeout;
-    let progressTimer: NodeJS.Timeout;
-
-    const startStage = (stageIndex: number) => {
-      if (stageIndex >= loadingStages.length) {
-        onComplete();
+    let isMounted = true;
+    setCurrentStage(0);
+    setProgress(0);
+    setStageProgress(0);
+    const totalStages = loadingStages.length;
+    const runStage = (stageIdx: number) => {
+      if (!isMounted) return;
+      if (stageIdx >= totalStages) {
+        setProgress(100);
+        setStageProgress(100);
+        setTimeout(() => isMounted && onComplete(), 300);
         return;
       }
-
-      setCurrentStage(stageIndex);
+      setCurrentStage(stageIdx);
       setStageProgress(0);
-
-      const stage = loadingStages[stageIndex];
-      const progressInterval = stage.duration / 100;
-
-      progressTimer = setInterval(() => {
-        setStageProgress((prev) => {
-          if (prev >= 100) {
-            clearInterval(progressTimer);
-            return 100;
-          }
-          return prev + 1;
-        });
-
-        setProgress((prev) => {
-          const totalStages = loadingStages.length;
-          const stageWeight = 100 / totalStages;
-          const currentStageProgress = (stageProgress / 100) * stageWeight;
-          const previousStagesProgress = stageIndex * stageWeight;
-          return previousStagesProgress + currentStageProgress;
-        });
-      }, progressInterval);
-
-      stageTimer = setTimeout(() => {
-        clearInterval(progressTimer);
-        startStage(stageIndex + 1);
-      }, stage.duration);
+      const stage = loadingStages[stageIdx];
+      const stageDuration = stage.duration;
+      const start = Date.now();
+      progressTimerRef.current && clearInterval(progressTimerRef.current);
+      progressTimerRef.current = setInterval(() => {
+        const elapsed = Date.now() - start;
+        let percent = Math.min(100, (elapsed / stageDuration) * 100);
+        setStageProgress(percent);
+        // Progreso total
+        const stageWeight = 100 / totalStages;
+        setProgress(
+          stageIdx * stageWeight + (percent / 100) * stageWeight
+        );
+        if (percent >= 100) {
+          progressTimerRef.current && clearInterval(progressTimerRef.current);
+        }
+      }, 30);
+      stageTimerRef.current && clearTimeout(stageTimerRef.current);
+      stageTimerRef.current = setTimeout(() => {
+        runStage(stageIdx + 1);
+      }, stageDuration);
     };
-
-    startStage(0);
-
+    runStage(0);
     return () => {
-      clearTimeout(skipTimer);
-      clearTimeout(stageTimer);
-      clearInterval(progressTimer);
+      isMounted = false;
+      stageTimerRef.current && clearTimeout(stageTimerRef.current);
+      progressTimerRef.current && clearInterval(progressTimerRef.current);
     };
-  }, [visible, onComplete, stageProgress]);
+  }, [visible, onComplete]);
 
   const handleSkip = () => {
+    setProgress(100);
+    setStageProgress(100);
     onComplete();
   };
 
@@ -150,8 +171,7 @@ const LoadingSystem = ({
             </p>
             {allowSkip && !canSkip && (
               <p className="text-xs text-muted-foreground mt-2">
-                Puedes saltar en{" "}
-                {Math.max(0, Math.ceil((1000 - (Date.now() % 1000)) / 1000))}s
+                Puedes saltar en {skipSeconds}s
               </p>
             )}
           </div>
