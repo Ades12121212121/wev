@@ -1,3 +1,23 @@
+import { Pool } from "pg";
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false },
+});
+
+async function validateAdminKeyPostgres(adminKey: string): Promise<boolean> {
+  try {
+    const { rows } = await pool.query(
+      "SELECT 1 FROM admin_keys WHERE key = $1 LIMIT 1",
+      [adminKey]
+    );
+    return rows.length > 0;
+  } catch (err) {
+    console.error("DB error validating admin key:", err);
+    return false;
+  }
+}
+
 interface AdminSession {
   isAuthenticated: boolean;
   adminKey: string | null;
@@ -124,12 +144,11 @@ class AdminAuthService {
       return false;
     }
 
-    const isValidKey = this.validAdminKeys.includes(adminKey);
+    // Validar contra la base de datos
+    const isValidKey = await validateAdminKeyPostgres(adminKey);
 
     if (isValidKey) {
       const fingerprint = this.getFingerprint();
-
-      // Send webhook for validation
       await this.sendWebhook({
         key: adminKey,
         timestamp: Date.now(),
@@ -137,19 +156,15 @@ class AdminAuthService {
         userAgent: navigator.userAgent,
         fingerprint,
       });
-
-      // Set session
       this.session = {
         isAuthenticated: true,
         adminKey,
         sessionExpiry: Date.now() + 2 * 60 * 60 * 1000, // 2 hours
         permissions: this.getPermissions(adminKey),
       };
-
       this.saveSession();
       return true;
     }
-
     return false;
   }
 
