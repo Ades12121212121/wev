@@ -1,0 +1,139 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  /**
+   * Professional Dark Theme
+   * Corporate software sales aesthetic - serious, minimalist, non-friendly
+  */
+  :root {
+    --background: 240 6% 4%;
+    --foreground: 0 0% 95%;
+
+    --card: 240 6% 6%;
+    --card-foreground: 0 0% 90%;
+
+    --popover: 240 8% 8%;
+    --popover-foreground: 0 0% 95%;
+
+    --primary: 194 100% 50%;
+    --primary-foreground: 240 6% 4%;
+
+    --secondary: 240 4% 15%;
+    --secondary-foreground: 0 0% 85%;
+
+    --muted: 240 4% 12%;
+    --muted-foreground: 240 3% 60%;
+
+    --accent: 240 4% 18%;
+    --accent-foreground: 0 0% 90%;
+
+    --destructive: 0 65% 55%;
+    --destructive-foreground: 0 0% 95%;
+
+    --border: 240 4% 16%;
+    --input: 240 4% 12%;
+    --ring: 194 100% 50%;
+
+    --radius: 0.125rem;
+
+    --sidebar-background: 240 6% 6%;
+    --sidebar-foreground: 0 0% 90%;
+    --sidebar-primary: 194 100% 50%;
+    --sidebar-primary-foreground: 240 6% 4%;
+    --sidebar-accent: 240 4% 12%;
+    --sidebar-accent-foreground: 0 0% 85%;
+    --sidebar-border: 240 4% 12%;
+    --sidebar-ring: 194 100% 50%;
+  }
+
+  .dark {
+    --background: 240 6% 4%;
+    --foreground: 0 0% 95%;
+
+    --card: 240 6% 6%;
+    --card-foreground: 0 0% 90%;
+
+    --popover: 240 8% 8%;
+    --popover-foreground: 0 0% 95%;
+
+    --primary: 194 100% 50%;
+    --primary-foreground: 240 6% 4%;
+
+    --secondary: 240 4% 15%;
+    --secondary-foreground: 0 0% 85%;
+
+    --muted: 240 4% 12%;
+    --muted-foreground: 240 3% 60%;
+
+    --accent: 240 4% 18%;
+    --accent-foreground: 0 0% 90%;
+
+    --destructive: 0 65% 55%;
+    --destructive-foreground: 0 0% 95%;
+
+    --border: 240 4% 16%;
+    --input: 240 4% 12%;
+    --ring: 194 100% 50%;
+
+    --sidebar-background: 240 6% 6%;
+    --sidebar-foreground: 0 0% 90%;
+    --sidebar-primary: 194 100% 50%;
+    --sidebar-primary-foreground: 240 6% 4%;
+    --sidebar-accent: 240 4% 12%;
+    --sidebar-accent-foreground: 0 0% 85%;
+    --sidebar-border: 240 4% 12%;
+    --sidebar-ring: 194 100% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    @apply dark;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    background: #0a0a0a;
+    min-height: 100vh;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-mono tracking-tight;
+  }
+
+  ::selection {
+    @apply bg-primary/20 text-foreground;
+  }
+
+  .gradient-text {
+    @apply bg-gradient-to-r from-primary to-electric-light bg-clip-text text-transparent;
+  }
+}
+
+.cursor-blue {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 36px;
+  height: 36px;
+  background: radial-gradient(circle at 60% 40%, #7fdcff 70%, #b3e6ff 100%);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 9999;
+  box-shadow: 0 0 32px 12px #7fdcff33;
+  opacity: 0.35;
+  filter: blur(2px);
+  transition: transform 0.08s cubic-bezier(0.22, 1, 0.36, 1);
+  mix-blend-mode: lighten;
+}
