@@ -91,47 +91,44 @@ const LoadingSystem = ({
   useEffect(() => {
     if (!visible) return;
     let isMounted = true;
-    setCurrentStage(0);
-    setProgress(0);
-    setStageProgress(0);
+    let stageIdx = 0;
     const totalStages = loadingStages.length;
-    const runStage = (stageIdx: number) => {
+    const stageWeight = 100 / totalStages;
+
+    const runStage = (idx: number) => {
       if (!isMounted) return;
-      if (stageIdx >= totalStages) {
+      if (idx >= totalStages) {
         setProgress(100);
         setStageProgress(100);
         setTimeout(() => isMounted && onComplete(), 300);
         return;
       }
-      setCurrentStage(stageIdx);
+      setCurrentStage(idx);
+      let percent = 0;
       setStageProgress(0);
-      const stage = loadingStages[stageIdx];
-      const stageDuration = stage.duration;
-      const start = Date.now();
-      progressTimerRef.current && clearInterval(progressTimerRef.current);
-      progressTimerRef.current = setInterval(() => {
-        const elapsed = Date.now() - start;
-        let percent = Math.min(100, (elapsed / stageDuration) * 100);
-        setStageProgress(percent);
-        // Progreso total
-        const stageWeight = 100 / totalStages;
-        setProgress(
-          stageIdx * stageWeight + (percent / 100) * stageWeight
-        );
+      const stage = loadingStages[idx];
+      const steps = 50; // Más pasos = más suave
+      const increment = 100 / steps;
+      const intervalTime = stage.duration / steps;
+      const interval = setInterval(() => {
+        percent += increment;
         if (percent >= 100) {
-          progressTimerRef.current && clearInterval(progressTimerRef.current);
+          percent = 100;
+          clearInterval(interval);
+          setStageProgress(percent);
+          setProgress((idx + 1) * stageWeight);
+          setTimeout(() => runStage(idx + 1), 200); // Pausa entre etapas
+        } else {
+          setStageProgress(percent);
+          setProgress(idx * stageWeight + (percent / 100) * stageWeight);
         }
-      }, 30);
-      stageTimerRef.current && clearTimeout(stageTimerRef.current);
-      stageTimerRef.current = setTimeout(() => {
-        runStage(stageIdx + 1);
-      }, stageDuration);
+      }, intervalTime);
     };
+
     runStage(0);
+
     return () => {
       isMounted = false;
-      stageTimerRef.current && clearTimeout(stageTimerRef.current);
-      progressTimerRef.current && clearInterval(progressTimerRef.current);
     };
   }, [visible, onComplete]);
 
